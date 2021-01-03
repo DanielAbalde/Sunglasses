@@ -72,7 +72,17 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="Resources\sunglasses.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\sunglassesBIG.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Canvas at 16%3b21%3b57.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\oie_q8qiIwwK9tN9.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

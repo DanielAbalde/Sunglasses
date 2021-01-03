@@ -63,9 +63,39 @@ namespace Sunglasses.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Canvas_at_16_21_57 {
+            get {
+                object obj = ResourceManager.GetObject("Canvas_at_16_21_57", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap oie_q8qiIwwK9tN9 {
+            get {
+                object obj = ResourceManager.GetObject("oie_q8qiIwwK9tN9", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap sunglasses {
             get {
                 object obj = ResourceManager.GetObject("sunglasses", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap sunglassesBIG {
+            get {
+                object obj = ResourceManager.GetObject("sunglassesBIG", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
