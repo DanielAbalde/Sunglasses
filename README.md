@@ -9,7 +9,7 @@
 <p align="center"> <img align="center" border="1px" src="Resources/Canvas at 16;21;57.png" alt="Img"></p>
 
 #### :electric_plug: Installation
-0) Download the last release of *Sunglasses.gha* from [here](https://www.food4rhino.com/app/sunglasses).
+0) Download the last release of *Sunglasses.gha* from [Food4Rhino](https://www.food4rhino.com/app/sunglasses).
 1) Make sure *Sunglasses.gha* is <ins>unlocked</ins>, right click > Properties > Unlock (if visible).
 2) Copy and paste it in the Grasshopper Libraries folder, usually: C:\Users\\<YourUser\>\AppData\Roaming\Grasshopper\Libraries.
 3) Restart Rhinoceros and Grasshopper.
@@ -39,4 +39,5 @@ You can invite me to a beer using Paypal from [here](https://www.paypal.com/payp
 
 ##### :question: Questions & Feedback
 
-Please use this post to post your suggestions or questions.
+Please use [this post](https://discourse.mcneel.com/t/sunglasses-gh-plugin-to-display-object-names/115550) to post your suggestions or questions.
+Or contribute using github.
