@@ -2,10 +2,9 @@
 <h1 align="center"> Sunglasses </h1>
 <p align="center"> <img align="center" border="1px" width="50%" src="Resources/sunglassesBIG.jpg" alt="Img"></p>
 <p align="center"> Draw the name (or nickname) of Grasshopper objects, to allow you to use the Icon Mode and have the name visible at the same time.</p>
-<p align="center">The advantage with the alternatives (and the reason for it) is that this is a purely graphic plugin, you don’t need any component to use it, it is modified via toolbar, and it doesn’t create any object inside the canvas either, it only affects the canvas visually. Besides, you look much more stunning with them.</p>
 
-
-## :sunglasses: Preview
+## :sunglasses: Overview
+The advantage with the alternatives (and the reason for it) is that this is a purely graphic plugin, you don’t need any component to use it, it is modified via toolbar, and it doesn’t create any object inside the canvas either, it only affects the canvas visually. Besides, you look much more stunning with them.
 <p align="center"> <img align="center" border="1px" src="Resources/Canvas at 16;21;57.png" alt="Img"></p>
 
 
