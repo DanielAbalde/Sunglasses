@@ -216,15 +216,16 @@ namespace Sunglasses
 
         private Guid galapagosID = new Guid("E6DD2904-14BC-455b-8376-948BF2E3A7BC");
     }
-
-
+     
     public class SunglassesInfo : GH_AssemblyInfo
     {
         public override string Name => "Sunglasses";
         public override Bitmap Icon => null;
         public override string Description => "Draw the name above the component, so that it can be used in icon mode.";
         public override Guid Id => new Guid("194607e9-d4d6-4e5a-836f-a65774231315");
-        public override string AuthorName => "I am the son of the beach and the moon 🤙";
-        public override string AuthorContact => "Too busy surfing 🏄🏻";
+        public override string AuthorName => "Daniel Gonzalez Abalde";
+        public override string AuthorContact => "dga_3@hotmail.com"; 
+        public override GH_LibraryLicense License => GH_LibraryLicense.opensource;
+        public override string Version => "1.0.0";
     }
 }

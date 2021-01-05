@@ -3,12 +3,12 @@
 <p align="center"> <img align="center" border="1px" width="50%" src="Resources/sunglassesBIG.jpg" alt="Img"></p>
 <p align="center"> Draw the name (or nickname) of Grasshopper objects, to allow you to use the Icon Mode and have the name visible at the same time.</p>
 
-## :sunglasses: Overview
+## 😎 Overview
 The advantage with the alternatives (and the reason for it) is that this is a purely graphic plugin, you don’t need any component to use it, it is modified via toolbar, and it doesn’t create any object inside the canvas either, it only affects the canvas visually. Besides, you look much more stunning with them.
 <p align="center"> <img align="center" border="1px" src="Resources/Canvas at 16;21;57.png" alt="Img"></p>
 
 
-## :electric_plug: Installation
+## 🔌 Installation
 0) Download the last release of *Sunglasses.gha* from [Food4Rhino](https://www.food4rhino.com/app/sunglasses).
 1) Make sure *Sunglasses.gha* is <ins>unlocked</ins>, right click > Properties > Unlock (if visible).
 2) Copy and paste it in the Grasshopper Libraries folder, usually: C:\Users\\<YourUser\>\AppData\Roaming\Grasshopper\Libraries.
@@ -16,7 +16,7 @@ The advantage with the alternatives (and the reason for it) is that this is a pu
 4) Access from Grasshopper Toolbar > Display > Draw Names At Top.
  
  
-## :open_book: Usage
+## 📖 Usage
 This plugin does not contain any components. Access the user settings from <ins>Grasshopper Toolbar > Display > Draw Names At Top</ins> to enable or disable, draw the nickname instead of name, change the size of the font and include or exclude objects to display the name.
 
 These user settings are stored in grasshopper_kernel.xml file in the Grasshopper folder, with the prefix "Sunglasses".
@@ -30,12 +30,12 @@ This project is free software: you can redistribute it and/or modify it under th
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 
-## :beers: Donation
+## 🍻 Donation
 
 You can invite me to a beer using Paypal from [here](https://www.paypal.com/paypalme/danielabalde). Thank you!
 
 
-## :question: Questions & Feedback
+## ❓ Questions & Feedback
 
 Please use [this post](https://discourse.mcneel.com/t/sunglasses-gh-plugin-to-display-object-names/115550) to make your suggestions or questions.
 Or contribute using github.
