@@ -73,9 +73,29 @@ namespace Sunglasses.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap oie_q8qiIwwK9tN9 {
+        internal static System.Drawing.Bitmap esgergergsdfsdfd {
             get {
-                object obj = ResourceManager.GetObject("oie_q8qiIwwK9tN9", resourceCulture);
+                object obj = ResourceManager.GetObject("esgergergsdfsdfd", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap RichedCapsulesDispatchGIF {
+            get {
+                object obj = ResourceManager.GetObject("RichedCapsulesDispatchGIF", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap RichedCapsulesListItemGIF {
+            get {
+                object obj = ResourceManager.GetObject("RichedCapsulesListItemGIF", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
