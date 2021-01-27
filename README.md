@@ -10,12 +10,23 @@ The advantage with the alternatives (and the reason for it) is that this is a pu
 
 
 ## 🔌 Installation
-0) Download the last release of *Sunglasses.gha* from [Food4Rhino](https://www.food4rhino.com/app/sunglasses).
+
+From food4Rhino:
+
+
+0) Download the last version of *Sunglasses.gha* from [Food4Rhino](https://www.food4rhino.com/app/sunglasses).
 1) Make sure *Sunglasses.gha* is <ins>unlocked</ins>, right click > Properties > Unlock (if visible).
 2) Copy and paste it in the Grasshopper Libraries folder, usually: C:\Users\\<YourUser\>\AppData\Roaming\Grasshopper\Libraries.
 3) Restart Rhinoceros and Grasshopper.
 4) Access from Grasshopper Toolbar > Display > Sunglasses.
  
+From YAK (for Rhino 7 and above):
+
+
+0) Type <ins>PackageManager</ins> in the rhino command prompt.
+1) In the Online tab, type "sunglasses" in the search box.
+2) Install last version.
+3) Restart Rhino and Grasshopper.
  
 ## 📖 Usage
 This plugin does not contain any components. Access the user settings from <ins>Grasshopper Toolbar > Display > Sunglasses</ins> to enable or disable, change the font, draw the nickname instead of name, and include or exclude objects to display the name.
