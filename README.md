@@ -6,6 +6,8 @@
 ## 😎 Overview
 The advantage with the alternatives (and the reason for it) is that this is a purely graphic plugin, you don’t need any component to use it, it is modified via toolbar, and it doesn’t create any object inside the canvas either, it only affects the canvas visually. Besides, you look much more stunning with them.
 <p align="center"> <img align="center" border="1px" src="Resources/Canvas at 16;21;57.png" alt="Img"></p>
+
+The second release (v1.1.0) includes the option **Riched capsules**. This is very useful for new Grasshopper users and teachers, and to avoid putting up panels all the time, to be able to understand the components and see the data they handle at a quick glance, simply by zooming in on them.
 <p align="center"> <img align="center" border="1px" src="Resources/RichedCapsulesDispatchGIF.gif" alt="Img"></p>
 
 
