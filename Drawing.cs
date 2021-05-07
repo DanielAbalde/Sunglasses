@@ -80,26 +80,21 @@ namespace Sunglasses
                 var infl = size * 25;
                 var hght = size * 2f;
                 var nicknames = Settings.DisplayNicknames || Settings.DisplayCustomNicknames;
-                graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
-                var sf = GH_TextRenderingConstants.CenterCenter;
-                sf.FormatFlags |= StringFormatFlags.NoClip;
                 graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                var sf = Grasshopper.GUI.GH_TextRenderingConstants.CenterCenter;
+                sf.FormatFlags |= StringFormatFlags.NoClip;
 
                 foreach (IGH_DocumentObject obj in objects)
                 {
                     if (obj.Attributes == null)
                         obj.CreateAttributes();
 
-                    RectangleF box = obj.Attributes.Bounds;
-                    box.Inflate(infl, 0);
-                    box.Height = hght;
-                    box.Y -= box.Height + 2;
-
+                    RectangleF box = obj.Attributes.Bounds; 
                     GH_Palette palette = obj is IGH_ActiveObject a ? GH_CapsuleRenderEngine.GetImpliedPalette(a) : GH_Palette.Normal;
                     GH_PaletteStyle style = GH_CapsuleRenderEngine.GetImpliedStyle(palette, obj.Attributes);
                     using (Brush brh = new SolidBrush(Color.FromArgb(alpha, style.Edge)))
                     {
-                        graphics.DrawString(nicknames ? obj.NickName : obj.Name, Settings.Font, brh, box, sf);
+                        graphics.DrawString(nicknames ? obj.NickName : obj.Name, Settings.Font, brh, box.X + box.Width/2f, box.Y - hght / 2f-2, sf);
                     }
 
                 }
