@@ -22,7 +22,7 @@ namespace Sunglasses
             if (editor == null)
                 return;
             var menu = editor.MainMenuStrip.Items.Find("mnuDisplay", false);
-            if (menu == null)
+            if (menu.Length==0)
             {
                 Rhino.RhinoApp.WriteLine("Sunglasses cannot find Display menu.");
                 return;

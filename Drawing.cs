@@ -80,6 +80,9 @@ namespace Sunglasses
                 var infl = size * 25;
                 var hght = size * 2f;
                 var nicknames = Settings.DisplayNicknames || Settings.DisplayCustomNicknames;
+                graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
+                var sf = GH_TextRenderingConstants.CenterCenter;
+                sf.FormatFlags |= StringFormatFlags.NoClip;
                 graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
                 foreach (IGH_DocumentObject obj in objects)
@@ -96,7 +99,7 @@ namespace Sunglasses
                     GH_PaletteStyle style = GH_CapsuleRenderEngine.GetImpliedStyle(palette, obj.Attributes);
                     using (Brush brh = new SolidBrush(Color.FromArgb(alpha, style.Edge)))
                     {
-                        graphics.DrawString(nicknames ? obj.NickName : obj.Name, Settings.Font, brh, box, Grasshopper.GUI.GH_TextRenderingConstants.CenterCenter);
+                        graphics.DrawString(nicknames ? obj.NickName : obj.Name, Settings.Font, brh, box, sf);
                     }
 
                 }
