@@ -31,6 +31,7 @@ From YAK (for Rhino 7 and above):
 2) Install last version.
 3) Restart Rhino and Grasshopper.
  
+ 
 ## 📖 Usage
 This plugin does not contain any components. Access the user settings from <ins>Grasshopper Toolbar > Display > Sunglasses</ins> to enable or disable, change the font, draw the nickname instead of name, and include or exclude objects to display the name.
  <p align="center"> <img align="center" border="1px" src="Media/menu1.2.0.png" alt="Img"></p>

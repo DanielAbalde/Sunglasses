@@ -84,7 +84,8 @@
   </Target>
   -->
   <PropertyGroup>
-    <PostBuildEvent>copy  /Y "$(TargetDir)$(ProjectName).dll" "$(USERPROFILE)\AppData\Roaming\Grasshopper\Libraries\$(ProjectName).gha"</PostBuildEvent>
+    <PostBuildEvent>copy  /Y "$(TargetDir)$(ProjectName).dll" "$(TargetDir)$(ProjectName).gha"
+copy  /Y "$(TargetDir)$(ProjectName).dll" "$(USERPROFILE)\AppData\Roaming\Grasshopper\Libraries\$(ProjectName).gha"</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <FallbackCulture>en-US</FallbackCulture>
