@@ -34,7 +34,7 @@ From YAK (for Rhino 7 and above):
  
 ## 📖 Usage
 This plugin does not contain any components. Access the user settings from <ins>Grasshopper Toolbar > Display > Sunglasses</ins> to enable or disable, change the font, draw the nickname instead of name, and include or exclude objects to display the name.
- <p align="center"> <img align="center" border="1px" src="Media/menu1.2.0.png" alt="Img"></p>
+ <p align="center"> <img align="center" border="1px" src="Media/menu1.2.0.PNG" alt="Img"></p>
 
 From version 1.1.0, there is another feature to visualise the content of components and parameters by zooming in on the capsules, when Display > Draw Icons is activated. Enable it from <ins>Grasshopper Toolbar >Display > Sunglasses > Riched capsules</ins>.
 <p align="center"> <img align="center" border="1px" src="Media/RichedCapsulesListItemGIF.gif" alt="Img"></p>
