@@ -54,18 +54,19 @@
     <Compile Include="MenuItem.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Plugin.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Plugin.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
@@ -73,24 +74,6 @@
     <None Include="packages.config" />
     <None Include="README.md" />
     <None Include="Resources\sunglasses.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\sunglassesBIG.jpg" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\Canvas at 16%3b21%3b57.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\oie_q8qiIwwK9tN9.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\esgergergsdfsdfd.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\RichedCapsulesDispatchGIF.gif" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\RichedCapsulesListItemGIF.gif" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

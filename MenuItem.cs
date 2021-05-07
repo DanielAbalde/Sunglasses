@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -10,6 +11,10 @@ namespace Sunglasses
 
     public class SunglassesMenuItem : ToolStripMenuItem
     {
+        private ToolStripMenuItem _menuNicknames;
+        private ToolStripMenuItem _menuCustomNicknames;
+        private ToolStripMenuItem _menuFilter;
+
         public SunglassesMenuItem()
             : base("Sunglasses", Properties.Resources.sunglasses, ClickHandler)
         {
@@ -17,38 +22,44 @@ namespace Sunglasses
             Size = new Size(200, 30);
             ToolTipText = "Draw the name above the component, so that it can be used in icon mode.";
             Checked = Settings.DisplayNames;
-            //var slider = new GH_DigitScroller
-            //{
-            //    MinimumValue = 3,
-            //    MaximumValue = 256,
-            //    DecimalPlaces = 1,
-            //    Value = (decimal)Settings.FontSize,
-            //    Size = new Size(200, 24)
-            //};
-            //slider.ValueChanged += Slider_ValueChanged; 
-            //GH_DocumentObject.Menu_AppendCustomItem(DropDown, slider);
-            GH_DocumentObject.Menu_AppendItem(DropDown, "Select font", SelectFontHandler);
+         
+            if (Rhino.Runtime.HostUtils.RunningOnWindows)
+            {
+                GH_DocumentObject.Menu_AppendItem(DropDown, "Select font", SelectFontHandler);
+            }
+            else
+            {
+                var slider = new GH_DigitScroller
+                {
+                    MinimumValue = 3,
+                    MaximumValue = 256,
+                    DecimalPlaces = 1,
+                    Value = (decimal)Settings.Font.Size,
+                    Size = new Size(200, 24)
+                };
+                slider.ValueChanged += Slider_ValueChanged;
+                GH_DocumentObject.Menu_AppendCustomItem(DropDown, slider);
+            }
 
-            GH_DocumentObject.Menu_AppendItem(DropDown, "Display nicknames",
-             DisplayNicknamesHandler, true, Settings.DisplayNicknames)
-             .ToolTipText = "Draw the nickname instead of the name of the objects.";
+            _menuNicknames = GH_DocumentObject.Menu_AppendItem(DropDown, "Display nicknames",
+             DisplayNicknamesHandler, true, Settings.DisplayNicknames);
+             _menuNicknames.ToolTipText = "Draw the nickname instead of the name of the objects.";
+            _menuCustomNicknames = GH_DocumentObject.Menu_AppendItem(DropDown, "Display custom nicknames",
+          DisplayCustomNicknamesHandler, true, Settings.DisplayCustomNicknames);
+          _menuCustomNicknames.ToolTipText = "Draw just the user defined nicknames.";
 
-            GH_DocumentObject.Menu_AppendItem(DropDown, "Hide on low zoom",
-      HideOnLowZoomHandler, true, Settings.HideOnLowZoom)
-       .ToolTipText = "If checked, the name disappears when the canvas zoom is very low.";
+            _menuFilter = GH_DocumentObject.Menu_AppendItem(DropDown, "Filter objects");
+            _menuFilter.ToolTipText = "Select in which objects to draw the name.";
 
-            var filter = GH_DocumentObject.Menu_AppendItem(DropDown, "Filter objects");
-            filter.ToolTipText = "Select in which objects to draw the name.";
-
-            GH_DocumentObject.Menu_AppendItem(filter.DropDown, "Components", FilterComponentHandler, true, Settings.FilterComponents)
+            GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Components", FilterComponentHandler, true, Settings.FilterComponents)
             .ToolTipText = "If checked, draw the name of components.";
-            GH_DocumentObject.Menu_AppendItem(filter.DropDown, "Parameters", FilterParameterHandler, true, Settings.FilterParameters)
+            GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Parameters", FilterParameterHandler, true, Settings.FilterParameters)
                 .ToolTipText = "If checked, draw the name of parameters.";
-            GH_DocumentObject.Menu_AppendItem(filter.DropDown, "Special", FilterSpecialHandler, true, Settings.FilterSpecial)
+            GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Special", FilterSpecialHandler, true, Settings.FilterSpecial)
                 .ToolTipText = "If checked, draw the name of special objects, like Number Slider, Panel, Gradient...";
-            GH_DocumentObject.Menu_AppendItem(filter.DropDown, "Graphics", FilterGraphicHandler, true, Settings.FilterGraphic)
+            GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Graphics", FilterGraphicHandler, true, Settings.FilterGraphic)
     .ToolTipText = "If checked, draw the name of graphic objects, like Group, Scribble, Jump...";
-            var customFilter = GH_DocumentObject.Menu_AppendItem(filter.DropDown, "Exclusions");
+            var customFilter = GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Exclusions");
             customFilter.ToolTipText = "Insert the names of the objects, separated by commas, that you want to exclude.";
             //GH_DocumentObject.Menu_AppendTextItem(customFilter.DropDown, Utils.FilterCustom, FilterCustomKeyDownHandler, FilterCustomTextChangedHandler, true); 
             var textBox = new ToolStripTextBox()
@@ -63,7 +74,17 @@ namespace Sunglasses
             GH_DocumentObject.Menu_AppendSeparator(DropDown);
             var riched = GH_DocumentObject.Menu_AppendItem(DropDown, "Riched capsules", DisplayRichedAttributesHandler, true, Settings.DisplayRichedCapsules);
             riched.ToolTipText = "Shows all the information within a component when zoomed in. ";
+             
+            GH_DocumentObject.Menu_AppendItem(DropDown, "Hide on low zoom",
+      HideOnLowZoomHandler, true, Settings.HideOnLowZoom)
+       .ToolTipText = "If checked, the name disappears when the canvas zoom is very low.";
 
+            if (Settings.DisplayNicknames)
+                _menuCustomNicknames.Checked = false;
+            else if (Settings.DisplayCustomNicknames)
+            {
+                _menuFilter.Enabled = false;
+            }
         }
 
         private void SelectFontHandler(object sender, EventArgs e)
@@ -192,7 +213,16 @@ namespace Sunglasses
         private void DisplayNicknamesHandler(object sender, EventArgs e)
         {
             ((ToolStripMenuItem)sender).Checked = Settings.DisplayNicknames = !Settings.DisplayNicknames;
+            if (Settings.DisplayNicknames)
+                _menuCustomNicknames.Checked = false; 
             Grasshopper.Instances.ActiveCanvas?.Refresh();
+        }
+        private void DisplayCustomNicknamesHandler(object sender, EventArgs e)
+        {
+            ((ToolStripMenuItem)sender).Checked = Settings.DisplayCustomNicknames = !Settings.DisplayCustomNicknames;      
+            Grasshopper.Instances.ActiveCanvas?.Refresh();
+            _menuFilter.Enabled = !Settings.DisplayCustomNicknames;
+
         }
         private void DisplayRichedAttributesHandler(object sender, EventArgs e)
         {
@@ -205,11 +235,11 @@ namespace Sunglasses
             Grasshopper.Instances.ActiveCanvas?.Refresh();
         }
 
-        //private void Slider_ValueChanged(object sender, Grasshopper.GUI.Base.GH_DigitScrollerEventArgs e)
-        //{
-        //    Settings.FontSize = (float)e.Value;
-        //    Grasshopper.Instances.ActiveCanvas?.Refresh();
-        //}
+        private void Slider_ValueChanged(object sender, Grasshopper.GUI.Base.GH_DigitScrollerEventArgs e)
+        {
+            Settings.Font = new Font(Settings.Font.FontFamily, (float)e.Value);
+            Grasshopper.Instances.ActiveCanvas?.Refresh();
+        }
 
         private static void ClickHandler(object sender, EventArgs e)
         {
@@ -219,26 +249,64 @@ namespace Sunglasses
 
         private bool ObjectFilter(IGH_DocumentObject obj)
         {
-            var custom = Settings.FilterCustom;
-            if (!string.IsNullOrEmpty(custom))
+            if (Settings.DisplayCustomNicknames)
             {
-                var split = custom.Split(',').Select(t => t.TrimStart().TrimEnd());
-                if (split.Contains(obj.Name))
-                    return false;
+                var code = string.Join(".", obj.Category, obj.SubCategory, obj.Name);
+                var defNick = string.Empty; 
+                if (_nicknamesCache.ContainsKey(code))
+                {
+                    defNick = _nicknamesCache[code];
+                }
+                else
+                {
+                    var id = obj.ComponentGuid;
+                    IGH_ObjectProxy proxy = null;
+                    if(id == clusterID || id == vbID || id == csID || id == pyID || id == Guid.Empty)
+                    {
+                        proxy = Grasshopper.Instances.ComponentServer.FindObjectByName(obj.Name, true, true);
+                    }
+                    else
+                    {
+                        proxy = Grasshopper.Instances.ComponentServer.EmitObjectProxy(id);
+                    }
+                  
+                    if(proxy != null)
+                    {
+                        defNick = proxy.Desc.NickName; 
+                        _nicknamesCache.Add(code, defNick);
+                    }
+                    else
+                    {
+                        Rhino.RhinoApp.WriteLine(obj.Name);
+                        return true;
+                    }
+                }
+                return !defNick.Equals(obj.NickName, StringComparison.OrdinalIgnoreCase); 
             }
-            if (obj is Grasshopper.Kernel.Special.GH_Cluster)
-                return Settings.FilterComponents;
-            if (obj.GetType().Namespace == "Grasshopper.Kernel.Special")
-                return Settings.FilterSpecial;
-            if (obj is IGH_Component || obj.ComponentGuid == galapagosID)
-                return Settings.FilterComponents;
-            if (obj is IGH_Param)
-                return Settings.FilterParameters;
-            if (!(obj is IGH_ActiveObject))
+            else
             {
-                return Settings.FilterGraphic;
+                var custom = Settings.FilterCustom;
+                if (!string.IsNullOrEmpty(custom))
+                {
+                    var split = custom.Split(',').Select(t => t.TrimStart().TrimEnd());
+                    if (split.Contains(obj.Name))
+                        return false;
+                }
+                if (obj is Grasshopper.Kernel.Special.GH_Cluster)
+                    return Settings.FilterComponents;
+                if (obj.GetType().Namespace == "Grasshopper.Kernel.Special")
+                    return Settings.FilterSpecial;
+                if (obj is IGH_Component || obj.ComponentGuid == galapagosID)
+                    return Settings.FilterComponents;
+                if (obj is IGH_Param)
+                    return Settings.FilterParameters;
+                if (!(obj is IGH_ActiveObject))
+                {
+                    return Settings.FilterGraphic;
+                }
+                return false;
             }
-            return false;
+          
         }
 
         protected override void OnCheckedChanged(EventArgs e)
@@ -268,6 +336,7 @@ namespace Sunglasses
 
         private IGH_DocumentObject[] _visibleObjects;
         private IGH_DocumentObject[] _filteredObjects;
+        private SortedDictionary<string, string> _nicknamesCache = new SortedDictionary<string, string>();
 
         private void Canvas_CanvasPrePaintObjects(Grasshopper.GUI.Canvas.GH_Canvas sender)
         {
@@ -299,6 +368,12 @@ namespace Sunglasses
         }
 
         private Guid galapagosID = new Guid("E6DD2904-14BC-455b-8376-948BF2E3A7BC");
+        private Guid clusterID = new Guid("f31d8d7a-7536-4ac8-9c96-fde6ecda4d0a");
+        private Guid vbID = new Guid("079bd9bd-54a0-41d4-98af-db999015f63d");
+        private Guid csID = new Guid("a9a8ebd2-fff5-4c44-a8f5-739736d129ba");
+        private Guid pyID = new Guid("410755b1-224a-4c1e-a407-bf32fb45ea7e");
+ 
+
     }
 
 }

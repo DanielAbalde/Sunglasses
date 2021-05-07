@@ -63,59 +63,9 @@ namespace Sunglasses.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Canvas_at_16_21_57 {
-            get {
-                object obj = ResourceManager.GetObject("Canvas_at_16_21_57", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap esgergergsdfsdfd {
-            get {
-                object obj = ResourceManager.GetObject("esgergergsdfsdfd", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap RichedCapsulesDispatchGIF {
-            get {
-                object obj = ResourceManager.GetObject("RichedCapsulesDispatchGIF", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap RichedCapsulesListItemGIF {
-            get {
-                object obj = ResourceManager.GetObject("RichedCapsulesListItemGIF", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap sunglasses {
             get {
                 object obj = ResourceManager.GetObject("sunglasses", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap sunglassesBIG {
-            get {
-                object obj = ResourceManager.GetObject("sunglassesBIG", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

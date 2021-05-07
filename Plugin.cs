@@ -45,8 +45,8 @@ namespace Sunglasses
         public override string Description => "Draw the name above the component, so that it can be used in icon mode.";
         public override Guid Id => new Guid("194607e9-d4d6-4e5a-836f-a65774231315");
         public override string AuthorName => "Daniel Gonzalez Abalde";
-        public override string AuthorContact => "dga_3@hotmail.com"; 
+        public override string AuthorContact => "https://discord.gg/75tP9hBnk8"; 
         public override GH_LibraryLicense License => GH_LibraryLicense.opensource;
-        public override string Version => "1.1.0";
+        public override string Version => "1.2.0";
     }
 }

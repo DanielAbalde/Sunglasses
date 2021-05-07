@@ -8,6 +8,7 @@ namespace Sunglasses
         public static string Key_DrawNames => "Sunglasses.DrawNames";
         public static string Key_Font => "Sunglasses.Font";
         public static string Key_DisplayNicknames => "Sunglasses.DisplayNicknames";
+        public static string Key_DisplayCustomNicknames => "Sunglasses.DisplayCustomNicknames";
         public static string Key_DisplayRichedCapsules => "Sunglasses.DisplayRichedAttributes";
         public static string Key_FilterComponents => "Sunglasses.FilterComponents";
         public static string Key_FilterParameters => "Sunglasses.FilterParameters";
@@ -114,6 +115,17 @@ namespace Sunglasses
             set
             {
                 Grasshopper.Instances.Settings.SetValue(Key_DisplayNicknames, value);
+            }
+        }
+        public static bool DisplayCustomNicknames
+        {
+            get
+            {
+                return Grasshopper.Instances.Settings.GetValue(Key_DisplayCustomNicknames, false);
+            }
+            set
+            {
+                Grasshopper.Instances.Settings.SetValue(Key_DisplayCustomNicknames, value);
             }
         }
         public static bool DisplayRichedCapsules

@@ -79,7 +79,7 @@ namespace Sunglasses
                 var size = Settings.Font.Size;
                 var infl = size * 25;
                 var hght = size * 2f;
-                var nicknames = Settings.DisplayNicknames;
+                var nicknames = Settings.DisplayNicknames || Settings.DisplayCustomNicknames;
                 graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
 
                 foreach (IGH_DocumentObject obj in objects)
