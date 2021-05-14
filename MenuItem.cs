@@ -79,6 +79,8 @@ namespace Sunglasses
             GH_DocumentObject.Menu_AppendItem(DropDown, "Hide on low zoom",
       HideOnLowZoomHandler, true, Settings.HideOnLowZoom)
        .ToolTipText = "If checked, the name disappears when the canvas zoom is very low.";
+
+            UpdateCustomNicknameMenuEntryState();
         }
 
         private void SelectFontHandler(object sender, EventArgs e)
@@ -204,17 +206,24 @@ namespace Sunglasses
             return split.All(t => Grasshopper.Instances.ComponentServer.FindObjectByName(t, true, true) != null);
         }
 
-        private void DisplayNicknamesHandler(object sender, EventArgs e)
+        private void UpdateCustomNicknameMenuEntryState()
         {
-            ((ToolStripMenuItem)sender).Checked = Settings.DisplayNicknames = !Settings.DisplayNicknames;
-            if (Settings.DisplayNicknames)
+            if (!Settings.DisplayNicknames)
             {
                 // Set Checked to false doesn't automatically provoke the corresponding event.
                 // Set the setting yourself.
-                
+
                 _menuCustomNicknames.Checked = false;
                 Settings.DisplayCustomNicknames = false;
             }
+
+            _menuCustomNicknames.Enabled = Settings.DisplayNicknames;
+        }
+        private void DisplayNicknamesHandler(object sender, EventArgs e)
+        {
+            ((ToolStripMenuItem)sender).Checked = Settings.DisplayNicknames = !Settings.DisplayNicknames;
+            UpdateCustomNicknameMenuEntryState();
+
             Grasshopper.Instances.ActiveCanvas?.Refresh();
         }
         private void DisplayCustomNicknamesHandler(object sender, EventArgs e)
