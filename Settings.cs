@@ -1,5 +1,7 @@
 ﻿using Grasshopper.Kernel;
-using System.Drawing; 
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace Sunglasses
 {
@@ -95,14 +97,32 @@ namespace Sunglasses
         }
         #endregion
 
+        // Cache frequently-used values to improve performance
+        // ??= isn't used to preserve compatibility with C# 7.3
+
+        private static bool? m_DisplayNames;
+        private static bool? m_DisplayNicknames;
+        private static bool? m_DisplayCustomNicknames;
+        private static bool? m_DisplayRichedCapsules;
+        private static bool? m_HideOnLowZoom;
+        private static bool? m_FilterComponents;
+        private static bool? m_FilterParameters;
+        private static bool? m_FilterSpecial;
+        private static bool? m_FilterGraphic;
+        private static string m_FilterCustom;
+
+        private static HashSet<string> _customFilters;
         public static bool DisplayNames
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_DrawNames, true);
+                return m_DisplayNames ?? 
+                    (m_DisplayNames = 
+                    Grasshopper.Instances.Settings.GetValue(Key_DrawNames, true)).Value;
             }
             set
             {
+                m_DisplayNames = value;
                 Grasshopper.Instances.Settings.SetValue(Key_DrawNames, value);
             }
         }
@@ -110,10 +130,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_DisplayNicknames, false);
+                return m_DisplayNicknames ??
+                    (m_DisplayNicknames =
+                    Grasshopper.Instances.Settings.GetValue(Key_DisplayNicknames, false)).Value;
             }
             set
             {
+                m_DisplayNicknames = value;
                 Grasshopper.Instances.Settings.SetValue(Key_DisplayNicknames, value);
             }
         }
@@ -121,10 +144,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_DisplayCustomNicknames, false);
+                return m_DisplayCustomNicknames ??
+                       (m_DisplayCustomNicknames =
+                       Grasshopper.Instances.Settings.GetValue(Key_DisplayCustomNicknames, false)).Value;
             }
             set
             {
+                m_DisplayCustomNicknames = value;
                 Grasshopper.Instances.Settings.SetValue(Key_DisplayCustomNicknames, value);
             }
         }
@@ -132,10 +158,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_DisplayRichedCapsules, true);
+                return m_DisplayRichedCapsules ??
+                    (m_DisplayRichedCapsules =
+                    Grasshopper.Instances.Settings.GetValue(Key_DisplayRichedCapsules, true)).Value;
             }
             set
             {
+                m_DisplayRichedCapsules = value;
                 Grasshopper.Instances.Settings.SetValue(Key_DisplayRichedCapsules, value);
             }
         }
@@ -143,10 +172,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_HideOnLowZoom, true);
+                return m_HideOnLowZoom ??
+                    (m_HideOnLowZoom =
+                    Grasshopper.Instances.Settings.GetValue(Key_HideOnLowZoom, true)).Value;
             }
             set
             {
+                m_HideOnLowZoom = value;
                 Grasshopper.Instances.Settings.SetValue(Key_HideOnLowZoom, value);
             }
         }
@@ -154,10 +186,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_FilterComponents, true);
+                return m_FilterComponents ??
+                    (m_FilterComponents =
+                    Grasshopper.Instances.Settings.GetValue(Key_FilterComponents, true)).Value;
             }
             set
             {
+                m_FilterComponents = value;
                 Grasshopper.Instances.Settings.SetValue(Key_FilterComponents, value);
             }
         }
@@ -165,10 +200,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_FilterParameters, true);
+                return m_FilterParameters ??
+                    (m_FilterParameters =
+                    Grasshopper.Instances.Settings.GetValue(Key_FilterParameters, true)).Value;
             }
             set
             {
+                m_FilterParameters = value;
                 Grasshopper.Instances.Settings.SetValue(Key_FilterParameters, value);
             }
         }
@@ -176,10 +214,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_FilterSpecial, true);
+                return m_FilterSpecial ??
+                    (m_FilterSpecial =
+                    Grasshopper.Instances.Settings.GetValue(Key_FilterSpecial, true)).Value;
             }
             set
             {
+                m_FilterSpecial = value;
                 Grasshopper.Instances.Settings.SetValue(Key_FilterSpecial, value);
             }
         }
@@ -187,10 +228,13 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_FilterGraphic, false);
+                return m_FilterGraphic ??
+                    (m_FilterGraphic =
+                    Grasshopper.Instances.Settings.GetValue(Key_FilterGraphic, false)).Value;
             }
             set
             {
+                m_FilterGraphic = value;
                 Grasshopper.Instances.Settings.SetValue(Key_FilterGraphic, value);
             }
         }
@@ -198,11 +242,39 @@ namespace Sunglasses
         {
             get
             {
-                return Grasshopper.Instances.Settings.GetValue(Key_FilterCustom, string.Empty);
+                return m_FilterCustom ??
+                    (m_FilterCustom =
+                    Grasshopper.Instances.Settings.GetValue(Key_FilterCustom, string.Empty));
             }
             set
             {
+                m_FilterCustom = value;
                 Grasshopper.Instances.Settings.SetValue(Key_FilterCustom, value);
+                UpdateFilterHashset();
+            }
+        }
+
+        public static bool IsFilterCustomEnabled => !string.IsNullOrEmpty(FilterCustom);
+
+        public static bool ShouldExcludeObject(string objectName)
+        {
+            if (_customFilters == null)
+                UpdateFilterHashset();
+
+            return _customFilters.Contains(objectName);
+        }
+
+        private static void UpdateFilterHashset()
+        {
+            var enumerable = FilterCustom.Split(',').Select(t => t.Trim());
+            if (_customFilters == null)
+            {
+                _customFilters = new HashSet<string>(enumerable);
+            }
+            else
+            {
+                _customFilters.Clear();
+                _customFilters.UnionWith(enumerable);
             }
         }
 
@@ -217,16 +289,13 @@ namespace Sunglasses
         }
         public static void Dispose()
         {
-            if (_font != null)
-                _font.Dispose();
-            if (_fontCapsuleInfoName != null)
-                _fontCapsuleInfoName.Dispose();
-            if (_fontCapsuleDescription != null)
-                _fontCapsuleDescription.Dispose();
-            if (_fontCapsuleInstanceDescription != null)
-                _fontCapsuleInstanceDescription.Dispose();
-            if (_fontCapsuleParameterName != null)
-                _fontCapsuleParameterName.Dispose();
+            // For better readibility
+
+            _font?.Dispose();
+            _fontCapsuleInfoName?.Dispose();
+            _fontCapsuleDescription?.Dispose();
+            _fontCapsuleInstanceDescription?.Dispose();
+            _fontCapsuleParameterName?.Dispose();
         }
     }
 

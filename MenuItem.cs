@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Grasshopper.GUI;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Special;
 
 namespace Sunglasses
 {
@@ -22,14 +23,14 @@ namespace Sunglasses
             Size = new Size(200, 30);
             ToolTipText = "Draw the name above the component, so that it can be used in icon mode.";
             Checked = Settings.DisplayNames;
-         
+
             if (Rhino.Runtime.HostUtils.RunningOnWindows)
             {
                 GH_DocumentObject.Menu_AppendItem(DropDown, "Select font", SelectFontHandler);
             }
             else
             {
-                var slider = new GH_DigitScroller
+                var slider = new Grasshopper.GUI.GH_DigitScroller
                 {
                     MinimumValue = 3,
                     MaximumValue = 256,
@@ -43,10 +44,10 @@ namespace Sunglasses
 
             _menuNicknames = GH_DocumentObject.Menu_AppendItem(DropDown, "Display nicknames",
              DisplayNicknamesHandler, true, Settings.DisplayNicknames);
-             _menuNicknames.ToolTipText = "Draw the nickname instead of the name of the objects.";
-            _menuCustomNicknames = GH_DocumentObject.Menu_AppendItem(DropDown, "Display custom nicknames",
+            _menuNicknames.ToolTipText = "Draw the nickname instead of the name of the objects.";
+            _menuCustomNicknames = GH_DocumentObject.Menu_AppendItem(DropDown, "Display only custom nicknames",
           DisplayCustomNicknamesHandler, true, Settings.DisplayCustomNicknames);
-          _menuCustomNicknames.ToolTipText = "Draw just the user defined nicknames.";
+            _menuCustomNicknames.ToolTipText = "Draw just the user defined nicknames.";
 
             _menuFilter = GH_DocumentObject.Menu_AppendItem(DropDown, "Filter objects");
             _menuFilter.ToolTipText = "Select in which objects to draw the name.";
@@ -74,17 +75,12 @@ namespace Sunglasses
             GH_DocumentObject.Menu_AppendSeparator(DropDown);
             var riched = GH_DocumentObject.Menu_AppendItem(DropDown, "Riched capsules", DisplayRichedAttributesHandler, true, Settings.DisplayRichedCapsules);
             riched.ToolTipText = "Shows all the information within a component when zoomed in. ";
-             
+
             GH_DocumentObject.Menu_AppendItem(DropDown, "Hide on low zoom",
       HideOnLowZoomHandler, true, Settings.HideOnLowZoom)
        .ToolTipText = "If checked, the name disappears when the canvas zoom is very low.";
 
-            if (Settings.DisplayNicknames)
-                _menuCustomNicknames.Checked = false;
-            else if (Settings.DisplayCustomNicknames)
-            {
-                _menuFilter.Enabled = false;
-            }
+            UpdateCustomNicknameMenuEntryState();
         }
 
         private void SelectFontHandler(object sender, EventArgs e)
@@ -99,7 +95,7 @@ namespace Sunglasses
                 return;
 
             var pickerType = typeof(GH_FontPicker);
-            var sizeScroller = pickerType.GetField("_SizeScroller", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(picker) as GH_DigitScroller;
+            var sizeScroller = pickerType.GetField("_SizeScroller", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(picker) as Grasshopper.GUI.GH_DigitScroller;
             var boldChecker = pickerType.GetField("_BoldCheck", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(picker) as CheckBox;
             var italicChecker = pickerType.GetField("_ItalicCheck", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(picker) as CheckBox;
             var fontScroller = pickerType.GetField("_FontList", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(picker) as GH_FontList;
@@ -210,18 +206,30 @@ namespace Sunglasses
             return split.All(t => Grasshopper.Instances.ComponentServer.FindObjectByName(t, true, true) != null);
         }
 
+        private void UpdateCustomNicknameMenuEntryState()
+        {
+            if (!Settings.DisplayNicknames)
+            {
+                // Set Checked to false doesn't automatically provoke the corresponding event.
+                // Set the setting yourself.
+
+                _menuCustomNicknames.Checked = false;
+                Settings.DisplayCustomNicknames = false;
+            }
+
+            _menuCustomNicknames.Enabled = Settings.DisplayNicknames;
+        }
         private void DisplayNicknamesHandler(object sender, EventArgs e)
         {
             ((ToolStripMenuItem)sender).Checked = Settings.DisplayNicknames = !Settings.DisplayNicknames;
-            if (Settings.DisplayNicknames)
-                _menuCustomNicknames.Checked = false; 
+            UpdateCustomNicknameMenuEntryState();
+
             Grasshopper.Instances.ActiveCanvas?.Refresh();
         }
         private void DisplayCustomNicknamesHandler(object sender, EventArgs e)
         {
             ((ToolStripMenuItem)sender).Checked = Settings.DisplayCustomNicknames = !Settings.DisplayCustomNicknames;      
             Grasshopper.Instances.ActiveCanvas?.Refresh();
-            _menuFilter.Enabled = !Settings.DisplayCustomNicknames;
 
         }
         private void DisplayRichedAttributesHandler(object sender, EventArgs e)
@@ -247,21 +255,56 @@ namespace Sunglasses
             item.Checked = !item.Checked;
         }
 
+        const string NameOfClusterComponent = "Cluster";
         private bool ObjectFilter(IGH_DocumentObject obj)
         {
+            // Hide nickname for panels
+            if (Settings.DisplayNicknames || Settings.DisplayCustomNicknames)
+            {
+                // Hide group's nickname for now
+
+                if (obj is GH_Panel || obj is GH_Group || obj is GH_NumberSlider)
+                    return false;
+
+                // TODO: Draw Group's nickname at the largest font size
+                // in the group's container box to be able to read it when the zoom is too low.
+            }
+
+            // Move filter logic ahead to enable filter on custom nicknames.
+
+            // Do not split the string in every paint call. Cache them in Settings.
+            // String manipulation & IEnumerable.Contains are time-costly.
+            if (Settings.IsFilterCustomEnabled &&
+                Settings.ShouldExcludeObject(obj.Name))
+                return false;
+
+            if (!Settings.FilterComponents &&
+                (obj is GH_Cluster || obj is IGH_Component || obj.ComponentGuid == galapagosID))
+                return false;
+
+            if (!Settings.FilterSpecial &&
+                IsSpecialObject(obj))
+                return false;
+
+            if (!Settings.FilterParameters &&
+                obj is IGH_Param)
+                return false;
+
+            if (!Settings.FilterGraphic &&
+                !(obj is IGH_ActiveObject))
+                return false;
+
             if (Settings.DisplayCustomNicknames)
             {
                 var code = string.Join(".", obj.Category, obj.SubCategory, obj.Name);
-                var defNick = string.Empty; 
-                if (_nicknamesCache.ContainsKey(code))
+
+                // Reduce string manipulation to improve performance
+                var id = obj.ComponentGuid;
+
+                if (!_nicknamesCache.TryGetValue(code, out var defNick))
                 {
-                    defNick = _nicknamesCache[code];
-                }
-                else
-                {
-                    var id = obj.ComponentGuid;
                     IGH_ObjectProxy proxy = null;
-                    if(id == clusterID || id == vbID || id == csID || id == pyID || id == Guid.Empty)
+                    if (id == clusterID || id == vbID || id == csID || id == pyID || id == Guid.Empty)
                     {
                         proxy = Grasshopper.Instances.ComponentServer.FindObjectByName(obj.Name, true, true);
                     }
@@ -269,44 +312,46 @@ namespace Sunglasses
                     {
                         proxy = Grasshopper.Instances.ComponentServer.EmitObjectProxy(id);
                     }
-                  
-                    if(proxy != null)
+
+                    if (proxy != null)
                     {
-                        defNick = proxy.Desc.NickName; 
+                        defNick = proxy.Desc.NickName;
                         _nicknamesCache.Add(code, defNick);
                     }
                     else
                     {
+                        if (obj is GH_Cluster)
+                        {
+                            // A newly-created cluster, or a cluster which is not an existing user object.
+                            // You cannot really know its original nickname
+                            // Show the nickname if it's not 'Cluster' - take it as newly-created
+
+                            return obj.NickName != NameOfClusterComponent;
+                        }
+
                         Rhino.RhinoApp.WriteLine(obj.Name);
                         return true;
                     }
                 }
-                return !defNick.Equals(obj.NickName, StringComparison.OrdinalIgnoreCase); 
+
+                return !defNick.Equals(obj.NickName, StringComparison.OrdinalIgnoreCase);
             }
-            else
-            {
-                var custom = Settings.FilterCustom;
-                if (!string.IsNullOrEmpty(custom))
-                {
-                    var split = custom.Split(',').Select(t => t.TrimStart().TrimEnd());
-                    if (split.Contains(obj.Name))
-                        return false;
-                }
-                if (obj is Grasshopper.Kernel.Special.GH_Cluster)
-                    return Settings.FilterComponents;
-                if (obj.GetType().Namespace == "Grasshopper.Kernel.Special")
-                    return Settings.FilterSpecial;
-                if (obj is IGH_Component || obj.ComponentGuid == galapagosID)
-                    return Settings.FilterComponents;
-                if (obj is IGH_Param)
-                    return Settings.FilterParameters;
-                if (!(obj is IGH_ActiveObject))
-                {
-                    return Settings.FilterGraphic;
-                }
+
+            return true;
+        }
+
+        // This method is created to cache results and improve performance.
+        private static Dictionary<Guid, bool> _specialObjectGuids = new Dictionary<Guid, bool>();
+        private static bool IsSpecialObject(IGH_DocumentObject obj)
+        {
+            // Cluster is regarded as a component, although it lies in the 'Special' namespace.
+            if (obj is GH_Cluster)
                 return false;
-            }
-          
+
+            var guid = obj.ComponentGuid;
+            if (_specialObjectGuids.TryGetValue(guid, out var result)) return result;
+
+            return _specialObjectGuids[guid] = obj.GetType().Namespace == "Grasshopper.Kernel.Special";
         }
 
         protected override void OnCheckedChanged(EventArgs e)
@@ -336,6 +381,7 @@ namespace Sunglasses
 
         private IGH_DocumentObject[] _visibleObjects;
         private IGH_DocumentObject[] _filteredObjects;
+
         private SortedDictionary<string, string> _nicknamesCache = new SortedDictionary<string, string>();
 
         private void Canvas_CanvasPrePaintObjects(Grasshopper.GUI.Canvas.GH_Canvas sender)
