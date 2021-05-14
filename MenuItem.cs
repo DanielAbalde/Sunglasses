@@ -382,7 +382,7 @@ namespace Sunglasses
         private IGH_DocumentObject[] _visibleObjects;
         private IGH_DocumentObject[] _filteredObjects;
 
-        private SortedList<string, string> _nicknamesCache = new SortedList<string, string>();
+        private SortedDictionary<string, string> _nicknamesCache = new SortedDictionary<string, string>();
 
         private void Canvas_CanvasPrePaintObjects(Grasshopper.GUI.Canvas.GH_Canvas sender)
         {
