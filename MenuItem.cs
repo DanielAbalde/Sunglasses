@@ -246,19 +246,22 @@ namespace Sunglasses
             item.Checked = !item.Checked;
         }
 
+        const string NameOfClusterComponent = "Cluster";
         private bool ObjectFilter(IGH_DocumentObject obj)
         {
-            // Groups are excluded regardless of settings.
-            // Since it is easily recognized and it would display custom nicknames itself.
-            if (obj is GH_Group)
-                return false;
-
             // Hide nickname for panels
             if (Settings.DisplayNicknames || Settings.DisplayCustomNicknames)
             {
-                if (obj is GH_Panel)
+                // Hide group's nickname for now
+
+                if (obj is GH_Panel || obj is GH_Group || obj is GH_NumberSlider)
                     return false;
+
+                // TODO: Draw Group's nickname at the largest font size
+                // in the group's container box to be able to read it when the zoom is too low.
             }
+
+            var code = string.Join(".", obj.Category, obj.SubCategory, obj.Name);
 
             // Move filter logic ahead to enable filter on custom nicknames.
 
@@ -289,7 +292,7 @@ namespace Sunglasses
                 // Reduce string manipulation to improve performance
                 var id = obj.ComponentGuid;
 
-                if (!_nicknamesCache.TryGetValue(id, out var defNick))
+                if (!_nicknamesCache.TryGetValue(code, out var defNick))
                 {
                     IGH_ObjectProxy proxy = null;
                     if (id == clusterID || id == vbID || id == csID || id == pyID || id == Guid.Empty)
@@ -304,10 +307,19 @@ namespace Sunglasses
                     if (proxy != null)
                     {
                         defNick = proxy.Desc.NickName;
-                        _nicknamesCache.Add(id, defNick);
+                        _nicknamesCache.Add(code, defNick);
                     }
                     else
                     {
+                        if (obj is GH_Cluster)
+                        {
+                            // A newly-created cluster, or a cluster which is not an existing user object.
+                            // You cannot really know its original nickname
+                            // Show the nickname if it's not 'Cluster' - take it as newly-created
+
+                            return obj.NickName != NameOfClusterComponent;
+                        }
+
                         Rhino.RhinoApp.WriteLine(obj.Name);
                         return true;
                     }
@@ -323,6 +335,10 @@ namespace Sunglasses
         private static Dictionary<Guid, bool> _specialObjectGuids = new Dictionary<Guid, bool>();
         private static bool IsSpecialObject(IGH_DocumentObject obj)
         {
+            // Cluster is regarded as a component, although it lies in the 'Special' namespace.
+            if (obj is GH_Cluster)
+                return false;
+
             var guid = obj.ComponentGuid;
             if (_specialObjectGuids.TryGetValue(guid, out var result)) return result;
 
@@ -357,8 +373,7 @@ namespace Sunglasses
         private IGH_DocumentObject[] _visibleObjects;
         private IGH_DocumentObject[] _filteredObjects;
 
-        // Change string key to Guid & Sorted to non-sorted to improve performance
-        private Dictionary<Guid, string> _nicknamesCache = new Dictionary<Guid, string>();
+        private SortedList<string, string> _nicknamesCache = new SortedList<string, string>();
 
         private void Canvas_CanvasPrePaintObjects(Grasshopper.GUI.Canvas.GH_Canvas sender)
         {
