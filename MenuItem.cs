@@ -270,8 +270,6 @@ namespace Sunglasses
                 // in the group's container box to be able to read it when the zoom is too low.
             }
 
-            var code = string.Join(".", obj.Category, obj.SubCategory, obj.Name);
-
             // Move filter logic ahead to enable filter on custom nicknames.
 
             // Do not split the string in every paint call. Cache them in Settings.
@@ -298,6 +296,8 @@ namespace Sunglasses
 
             if (Settings.DisplayCustomNicknames)
             {
+                var code = string.Join(".", obj.Category, obj.SubCategory, obj.Name);
+
                 // Reduce string manipulation to improve performance
                 var id = obj.ComponentGuid;
 
