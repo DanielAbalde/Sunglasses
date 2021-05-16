@@ -4,6 +4,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Attributes;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Sunglasses
 {
@@ -13,6 +14,8 @@ namespace Sunglasses
         #region Fields
         private static float _zoomFactor;
         private static Grasshopper.GUI.GH_FadeAnimation _fade;
+        private static Grasshopper.GUI.GH_FadeAnimation _fadeGroups;
+        private static Dictionary<Guid, Tuple<Size, string, FontFamily, FontStyle, float>> _groupsFontSizeCache = new Dictionary<Guid, Tuple<Size, string, FontFamily, FontStyle, float>>();
         #endregion
 
         #region Properties 
@@ -36,6 +39,15 @@ namespace Sunglasses
                 return _fade;
             }
         }
+        public static Grasshopper.GUI.GH_FadeAnimation FadeGroups
+        {
+            get
+            {
+                if (_fadeGroups == null)
+                    _fadeGroups = new Grasshopper.GUI.GH_FadeAnimation(GH_Viewport.ZoomDefault * 0.5f);
+                return _fadeGroups;
+            }
+        }
         public static float BoxBorderWidth
         {
             get
@@ -45,8 +57,10 @@ namespace Sunglasses
         }
         public static float ZoomObjectsDisplayMin { get { return 6f; } }
         public static float ZoomObjectsDisplayMax { get { return 10f; } }
+        public static float GroupNicknameFontSizeMin { get { return 6f; } }
         #endregion
 
+        #region Utils
         public static Color FadeColor(Color color)
         {
             return Color.FromArgb(Fade.FadeAlpha, color);
@@ -68,92 +82,71 @@ namespace Sunglasses
                 rec.Height - rec.Height % snapping
                 );
         }
-
-        public static void PaintNames(Graphics graphics, IEnumerable<IGH_DocumentObject> objects)
+        public static Font AdjustFontHeight(Graphics graphics, Font font, string text, RectangleF bounds, float minSize = 0.1f)
         {
-            if (Settings.HideOnLowZoom && GH_Canvas.ZoomFadeLow < 5)
-                return;
-            try
-            {
-                var alpha = Settings.HideOnLowZoom ? GH_Canvas.ZoomFadeLow : 255;
-                var size = Settings.Font.Size;
-                var infl = size * 25;
-                var hght = size * 2f;
-                var nicknames = Settings.DisplayNicknames || Settings.DisplayCustomNicknames;
-                graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                var sf = Grasshopper.GUI.GH_TextRenderingConstants.CenterCenter;
-                sf.FormatFlags |= StringFormatFlags.NoClip;
+            if (font.Size <= minSize)
+                return font;
+            var h = graphics.MeasureString(text, font, (int)Math.Ceiling(bounds.Width)).Height;
+            if (h < bounds.Height)
+                return font;
+            var ratio = bounds.Height / h;
+            var delta = Math.Max(0.1f, font.Size - font.Size * ratio);
+            var newSize = Math.Max(0.1f, font.Size - 0.5f * delta);
+            return AdjustFontHeight(graphics, new Font(font.Name, newSize, font.Style), text, bounds);
 
-                foreach (IGH_DocumentObject obj in objects)
-                {
-                    if (obj.Attributes == null)
-                        obj.CreateAttributes();
-
-                    RectangleF box = obj.Attributes.Bounds; 
-                    GH_Palette palette = obj is IGH_ActiveObject a ? GH_CapsuleRenderEngine.GetImpliedPalette(a) : GH_Palette.Normal;
-                    GH_PaletteStyle style = GH_CapsuleRenderEngine.GetImpliedStyle(palette, obj.Attributes);
-                    using (Brush brh = new SolidBrush(Color.FromArgb(alpha, style.Edge)))
-                    {
-                        graphics.DrawString(nicknames ? obj.NickName : obj.Name, Settings.Font, brh, box.X + box.Width/2f, box.Y - hght / 2f-2, sf);
-                    }
-
-                }
-            }
-            catch (Exception e)
-            {
-                Rhino.RhinoApp.WriteLine(e.ToString());
-            }
         }
-
-        public static void PaintRichedCapsules(GH_Canvas canvas, IEnumerable<IGH_DocumentObject> objects)
+        public static float CalculateFittedFontSize(Graphics graphics, Font font, float size, string text, int limitWidth, float height, StringFormat sf, bool oneWord, int counter = 0)
         {
-            Fade.Evaluate(canvas, true);
-            if (Fade.FadeAlpha < 1)
-                return;
-            ZoomFactor = canvas.Viewport.Zoom;
-            if (ZoomFactor == 0)
-                return;
-            try
-            {
-                var graphics = canvas.Graphics;
-                foreach (var obj in objects)
+            //if (true)
+            //{
+                var f = new Font(font.FontFamily, size);
+                var s = graphics.MeasureString(text, f, oneWord ? int.MaxValue : limitWidth, sf);
+                f.Dispose();
+                var eh = height - s.Height;
+                var ew = limitWidth - s.Width;
+
+                if (Math.Abs(eh) < 1f && ew >= 0)
+                    return size;
+
+                var ds = 1.0f;
+                if ((oneWord || ew < 0) && eh >= 0)
                 {
-                    if (!(obj is IGH_ActiveObject aObj))
-                        continue;
-                    if (obj.Attributes == null)
-                        obj.CreateAttributes();
-                    var objAtt = obj.Attributes;
-                    var bounds = objAtt.Bounds;
-                    if (!canvas.Viewport.IsVisible(ref bounds, 0))
-                        continue;
-                    RichedCapsule rObj = null;
-                    if (objAtt is GH_ComponentAttributes cAtt)
-                    {
-                        rObj = new RichedCapsuleComponent(cAtt);
-                    }
-                    else if (objAtt is GH_FloatingParamAttributes pAtt && (aObj.IconDisplayMode == GH_IconDisplayMode.icon || aObj.IconDisplayMode == GH_IconDisplayMode.application && Grasshopper.CentralSettings.CanvasObjectIcons))
-                    {
-                        rObj = new RichedCapsuleParameter(pAtt);
-                    }
-
-                    if (rObj == null)
-                        continue;
-
-                    rObj.RenderRichedCapsule(graphics, canvas);
-
-                    if (objAtt is GH_ComponentAttributes cAtt2)
-                    {
-                        typeof(GH_ComponentAttributes).GetMethod("RenderVariableParameterUI",
-                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                        .Invoke(cAtt2, new object[] { canvas, graphics });
-                    }
+                    ds = limitWidth / s.Width;
                 }
-            }
-            catch (Exception e)
-            {
-                Rhino.RhinoApp.WriteLine(" :( Sunglasses exception painting riched capsules! try with another font ):");
-                Rhino.RhinoApp.WriteLine(e.ToString());
-            }
+                else
+                {
+                    ds = height / s.Height;
+                }
+                var t = ((1f - counter / 1000f) * 0.8f + 0.1f);
+                var newSize = size + t * ((size * ds) - size);
+                if (ds >= 1f && Math.Abs(size - newSize) < 0.01f)
+                    return newSize;
+
+                if (counter++ > 1000 && s.Height < height)
+                    return size;
+                return CalculateFittedFontSize(graphics, font, newSize, text, limitWidth, height, sf, oneWord, counter);
+
+            //}
+            //else
+            //{
+            //    var f = new Font(font.FontFamily, size);
+            //    var h = graphics.MeasureString(text, f, limitWidth, sf).Height;
+            //    f.Dispose();
+            //    var eh = height - h;
+            //    if (Math.Abs(eh) < 1f)
+            //        return size;
+            //    var ds = height / h;
+            //    if (Math.Abs(1f - ds) < 0.1f)
+            //        return size;
+            //    var t = ((1f - counter / 500f) * 0.6f + 0.1f);
+            //    var newSize = size + t * ((size * ds) - size);
+            //    if (eh > 0)
+            //        counter++;
+            //    if (counter > 500)
+            //        return size;
+            //    return CalculateFittedFontSize(graphics, font, newSize, text, limitWidth, height, sf, oneWord, counter);
+
+            //}
         }
         public static IEnumerable<IGH_DocumentObject> GetVisibleObjects(GH_Canvas canvas, IEnumerable<IGH_DocumentObject> objects)
         {
@@ -174,7 +167,6 @@ namespace Sunglasses
                 }
             }
         }
-
         internal static List<string> GetDataDescription(Grasshopper.Kernel.Data.IGH_Structure data, Graphics graphics, Font font, SizeF limit, out float height)
         {
             var list = new List<string>();
@@ -233,6 +225,169 @@ namespace Sunglasses
                 return text;
             }
         }
+        #endregion
+
+        #region Paint
+        public static void PaintNames(Graphics graphics, IEnumerable<IGH_DocumentObject> objects)
+        {
+            if (Settings.HideOnLowZoom && GH_Canvas.ZoomFadeLow < 5)
+                return;
+            try
+            {
+                var alpha = Settings.HideOnLowZoom ? GH_Canvas.ZoomFadeLow : 255;
+                var size = Settings.Font.Size;
+                var infl = size * 25;
+                var hght = size * 2f;
+                var nicknames = Settings.DisplayNicknames || Settings.DisplayCustomNicknames;
+                graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                var sf = Grasshopper.GUI.GH_TextRenderingConstants.CenterCenter;
+                sf.FormatFlags |= StringFormatFlags.NoClip;
+
+                foreach (IGH_DocumentObject obj in objects)
+                {
+                    if (obj.Attributes == null)
+                        obj.CreateAttributes();
+
+                    RectangleF box = obj.Attributes.Bounds; 
+                    GH_Palette palette = obj is IGH_ActiveObject a ? GH_CapsuleRenderEngine.GetImpliedPalette(a) : GH_Palette.Normal;
+                    GH_PaletteStyle style = GH_CapsuleRenderEngine.GetImpliedStyle(palette, obj.Attributes);
+                    using (Brush brh = new SolidBrush(Color.FromArgb(alpha, style.Edge)))
+                    {
+                        graphics.DrawString(nicknames ? obj.NickName : obj.Name, Settings.Font, brh, box.X + box.Width/2f, box.Y - hght / 2f-2, sf);
+                    }
+
+                }
+            }
+            catch (Exception e)
+            {
+                Rhino.RhinoApp.WriteLine(e.ToString());
+            }
+        }
+        
+        public static void PaintGroupNickname(GH_Canvas canvas, IEnumerable<Grasshopper.Kernel.Special.GH_Group> groups)
+        {
+            if (groups == null || !groups.Any())
+                return;
+
+            var graphics = canvas.Graphics;
+            graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+            var alpha = 255 - GH_Canvas.ZoomFadeLow;
+            GH_Palette palette = GH_Palette.Hidden;
+            var sf = new StringFormat() { 
+                Alignment = StringAlignment.Center, 
+                LineAlignment = StringAlignment.Center, 
+                Trimming = StringTrimming.Word,
+                // FormatFlags = StringFormatFlags.LineLimit
+            };
+
+            var sFont = Settings.Font;
+            foreach (var group in groups)
+            {
+                if (string.IsNullOrEmpty(group.NickName))
+                    continue; 
+                if (group.Attributes == null)
+                    group.CreateAttributes();
+                 
+                var box = group.Attributes.Bounds;
+                var sbox = Snap(box, 0.1f);
+                var ph = canvas.Viewport.ProjectRectangle(sbox).Height;
+                if (ph < 10)
+                    continue;
+                var sboxSize = GH_Convert.ToSize(sbox.Size);
+                var fontSize = sFont.Size; 
+                if(_groupsFontSizeCache.ContainsKey(group.InstanceGuid))
+                {
+                    var cache = _groupsFontSizeCache[group.InstanceGuid];
+                    if(cache.Item1.Equals(sboxSize) && cache.Item2.Equals(group.NickName) &&
+                        cache.Item3.Equals(sFont.FontFamily) && cache.Item4.Equals(sFont.Style))
+                    { 
+                        fontSize = cache.Item5;
+                    }
+                    else
+                    {
+                        fontSize = CalculateFittedFontSize(graphics, sFont, ph, group.NickName, (int)Math.Ceiling(box.Width), box.Height, sf, IsOneWord(group.NickName));
+                        _groupsFontSizeCache[group.InstanceGuid] = new Tuple<Size, string, FontFamily, FontStyle, float>(GH_Convert.ToSize(sbox.Size), group.NickName, sFont.FontFamily, sFont.Style, fontSize);
+                    }
+                }
+                else
+                { 
+                    fontSize = CalculateFittedFontSize(graphics, sFont, ph, group.NickName, (int)Math.Ceiling(box.Width), box.Height, sf, IsOneWord(group.NickName));
+                    _groupsFontSizeCache.Add(group.InstanceGuid, new Tuple<Size, string, FontFamily, FontStyle, float>(sboxSize, group.NickName, sFont.FontFamily, sFont.Style, fontSize));
+                }
+
+                if (fontSize < GroupNicknameFontSizeMin)
+                    continue;
+
+                using (var font = new Font(sFont.FontFamily, fontSize))
+                {
+                    var style = GH_CapsuleRenderEngine.GetImpliedStyle(palette, group.Attributes);
+                    var color = Grasshopper.GUI.GH_GraphicsUtil.BlendColour(Grasshopper.GUI.GH_GraphicsUtil.ForegroundColour(group.Colour, 150), group.Colour.GetBrightness() < 0.5 ? Color.White : Color.Black, 0.3);
+                    using (Brush brh = new SolidBrush(Color.FromArgb(alpha, color)))
+                        graphics.DrawString(group.NickName, font, brh, box, sf);
+                }
+            }
+
+            sf.Dispose();
+
+            bool IsOneWord(string text)
+            {
+                return !System.Text.RegularExpressions.Regex.IsMatch(text, "\\w+\\W+\\w");
+            }
+        }
+
+        public static void PaintRichedCapsules(GH_Canvas canvas, IEnumerable<IGH_DocumentObject> objects)
+        {
+            Fade.Evaluate(canvas, true);
+            if (Fade.FadeAlpha < 1)
+                return;
+            ZoomFactor = canvas.Viewport.Zoom;
+            if (ZoomFactor == 0)
+                return;
+            try
+            {
+                var graphics = canvas.Graphics;
+                foreach (var obj in objects)
+                {
+                    if (!(obj is IGH_ActiveObject aObj))
+                        continue;
+                    if (obj.Attributes == null)
+                        obj.CreateAttributes();
+                    var objAtt = obj.Attributes;
+                    var bounds = objAtt.Bounds;
+                    if (!canvas.Viewport.IsVisible(ref bounds, 0))
+                        continue;
+                    RichedCapsule rObj = null;
+                    if (objAtt is GH_ComponentAttributes cAtt)
+                    {
+                        rObj = new RichedCapsuleComponent(cAtt);
+                    }
+                    else if (objAtt is GH_FloatingParamAttributes pAtt && (aObj.IconDisplayMode == GH_IconDisplayMode.icon || aObj.IconDisplayMode == GH_IconDisplayMode.application && Grasshopper.CentralSettings.CanvasObjectIcons))
+                    {
+                        rObj = new RichedCapsuleParameter(pAtt);
+                    }
+
+                    if (rObj == null)
+                        continue;
+
+                    rObj.RenderRichedCapsule(graphics, canvas);
+
+                    if (objAtt is GH_ComponentAttributes cAtt2)
+                    {
+                        typeof(GH_ComponentAttributes).GetMethod("RenderVariableParameterUI",
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        .Invoke(cAtt2, new object[] { canvas, graphics });
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Rhino.RhinoApp.WriteLine(" :( Sunglasses exception painting riched capsules! try with another font ):");
+                Rhino.RhinoApp.WriteLine(e.ToString());
+            }
+        }
+        #endregion
+
+        #region Capsule
         internal static float PaintCapsuleParameterData(Graphics graphics, RectangleF bounds, IGH_Param param, GH_PaletteStyle style)
         {
             if (bounds.Width <= 2 || bounds.Height <= 1 || ZoomFactor < 0.5f)
@@ -407,7 +562,6 @@ namespace Sunglasses
 
             return bounds.Height;
         }
-
         internal static void PaintCapsuleBoxBackground(Graphics graphics, RectangleF bounds, GH_PaletteStyle style)
         {
             using (var brh = new SolidBrush(Color.FromArgb(15, FadeColor(Color.Black))))
@@ -474,21 +628,7 @@ namespace Sunglasses
             using (var pen = new Pen(Color.Red, BoxBorderWidth))
                 graphics.DrawRectangle(pen, bounds.X, bounds.Y, bounds.Width, bounds.Height);
         }
-
-        public static Font AdjustFontHeight(Graphics graphics, Font font, string text, RectangleF bounds)
-        {
-            if (font.Size <= 0.1f)
-                return font;
-            var h = graphics.MeasureString(text, font, (int)Math.Ceiling(bounds.Width)).Height;
-            if (h < bounds.Height)
-                return font;
-            var ratio = bounds.Height / h;
-            var delta = Math.Max(0.1f, font.Size - font.Size * ratio);
-            var newSize = Math.Max(0.1f, font.Size - 0.5f * delta);
-            return AdjustFontHeight(graphics, new Font(font.Name, newSize, font.Style), text, bounds);
-
-        }
-
+    
         internal abstract class RichedCapsule
         {
             #region Fields 
@@ -1074,6 +1214,7 @@ namespace Sunglasses
                 }
             }
         }
+        #endregion
     }
 
 

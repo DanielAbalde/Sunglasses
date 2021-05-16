@@ -18,6 +18,7 @@ namespace Sunglasses
         public static string Key_FilterGraphic => "Sunglasses.FilterGraphic";
         public static string Key_FilterCustom => "Sunglasses.FilterCustom";
         public static string Key_HideOnLowZoom => "Sunglasses.HideOnLowZoom ";
+        public static string Key_GroupsOnLowZoom => "Sunglasses.GroupsOnLowZoom ";
 
         #region Fonts
         private static Font _font;
@@ -96,15 +97,13 @@ namespace Sunglasses
 
         }
         #endregion
-
-        // Cache frequently-used values to improve performance
-        // ??= isn't used to preserve compatibility with C# 7.3
-
+       
         private static bool? m_DisplayNames;
         private static bool? m_DisplayNicknames;
         private static bool? m_DisplayCustomNicknames;
         private static bool? m_DisplayRichedCapsules;
         private static bool? m_HideOnLowZoom;
+        private static bool? m_GroupsOnLowZoom;
         private static bool? m_FilterComponents;
         private static bool? m_FilterParameters;
         private static bool? m_FilterSpecial;
@@ -182,6 +181,20 @@ namespace Sunglasses
                 Grasshopper.Instances.Settings.SetValue(Key_HideOnLowZoom, value);
             }
         }
+        public static bool GroupsOnLowZoom
+        {
+            get
+            {
+                return m_GroupsOnLowZoom ??
+                    (m_GroupsOnLowZoom =
+                    Grasshopper.Instances.Settings.GetValue(Key_GroupsOnLowZoom, false)).Value;
+            }
+            set
+            {
+                m_GroupsOnLowZoom = value;
+                Grasshopper.Instances.Settings.SetValue(Key_GroupsOnLowZoom, value);
+            }
+        }
         public static bool FilterComponents
         {
             get
@@ -256,12 +269,12 @@ namespace Sunglasses
 
         public static bool IsFilterCustomEnabled => !string.IsNullOrEmpty(FilterCustom);
 
-        public static bool ShouldExcludeObject(string objectName)
+        public static bool ShouldExcludeObject(IGH_DocumentObject obj)
         {
             if (_customFilters == null)
                 UpdateFilterHashset();
 
-            return _customFilters.Contains(objectName);
+            return _customFilters.Contains(obj.Name) || _customFilters.Contains(obj.NickName);
         }
 
         private static void UpdateFilterHashset()
@@ -288,9 +301,7 @@ namespace Sunglasses
             _fontCapsuleParameterData = null;
         }
         public static void Dispose()
-        {
-            // For better readibility
-
+        { 
             _font?.Dispose();
             _fontCapsuleInfoName?.Dispose();
             _fontCapsuleDescription?.Dispose();
