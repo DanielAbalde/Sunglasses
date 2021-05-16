@@ -21,27 +21,9 @@ namespace Sunglasses
         {
             Name = "SunglassesMenuItem";
             Size = new Size(200, 30);
-            ToolTipText = "Draw the name above the component, so that it can be used in icon mode.";
+            ToolTipText = "Draw the name or nickname above the component, so that it can be used in icon mode.\n\rVersion " + typeof(SunglassesMenuItem).Assembly.GetName().Version;
             Checked = Settings.DisplayNames;
-
-            if (Rhino.Runtime.HostUtils.RunningOnWindows)
-            {
-                GH_DocumentObject.Menu_AppendItem(DropDown, "Select font", SelectFontHandler);
-            }
-            else
-            {
-                var slider = new Grasshopper.GUI.GH_DigitScroller
-                {
-                    MinimumValue = 3,
-                    MaximumValue = 256,
-                    DecimalPlaces = 1,
-                    Value = (decimal)Settings.Font.Size,
-                    Size = new Size(200, 24)
-                };
-                slider.ValueChanged += Slider_ValueChanged;
-                GH_DocumentObject.Menu_AppendCustomItem(DropDown, slider);
-            }
-
+           
             _menuNicknames = GH_DocumentObject.Menu_AppendItem(DropDown, "Display nicknames",
              DisplayNicknamesHandler, true, Settings.DisplayNicknames);
             _menuNicknames.ToolTipText = "Draw the nickname instead of the name of the objects.";
@@ -61,7 +43,7 @@ namespace Sunglasses
             GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Graphics", FilterGraphicHandler, true, Settings.FilterGraphic)
     .ToolTipText = "If checked, draw the name of graphic objects, like Group, Scribble, Jump...";
             var customFilter = GH_DocumentObject.Menu_AppendItem(_menuFilter.DropDown, "Exclusions");
-            customFilter.ToolTipText = "Insert the names of the objects, separated by commas, that you want to exclude.";
+            customFilter.ToolTipText = "Insert the names or nicknames of the objects, separated by commas, that you want to exclude.";
             //GH_DocumentObject.Menu_AppendTextItem(customFilter.DropDown, Utils.FilterCustom, FilterCustomKeyDownHandler, FilterCustomTextChangedHandler, true); 
             var textBox = new ToolStripTextBox()
             {
@@ -73,12 +55,38 @@ namespace Sunglasses
             customFilter.DropDownItems.Add(textBox);
 
             GH_DocumentObject.Menu_AppendSeparator(DropDown);
+
             var riched = GH_DocumentObject.Menu_AppendItem(DropDown, "Riched capsules", DisplayRichedAttributesHandler, true, Settings.DisplayRichedCapsules);
             riched.ToolTipText = "Shows all the information within a component when zoomed in. ";
 
-            GH_DocumentObject.Menu_AppendItem(DropDown, "Hide on low zoom",
-      HideOnLowZoomHandler, true, Settings.HideOnLowZoom)
+            GH_DocumentObject.Menu_AppendItem(DropDown, "Hide on low zoom", HideOnLowZoomHandler, true, Settings.HideOnLowZoom)
        .ToolTipText = "If checked, the name disappears when the canvas zoom is very low.";
+
+            GH_DocumentObject.Menu_AppendItem(DropDown, "Big nicknames on groups", GroupsOnLowZoomHandler, true, Settings.GroupsOnLowZoom)
+    .ToolTipText = "If checked, the nickname of the groups is drawn with low zoom.";
+
+            GH_DocumentObject.Menu_AppendSeparator(DropDown);
+
+            if (Rhino.Runtime.HostUtils.RunningOnWindows)
+            {
+                GH_DocumentObject.Menu_AppendItem(DropDown, "Select font", SelectFontHandler);
+            }
+            else
+            {
+                var slider = new Grasshopper.GUI.GH_DigitScroller
+                {
+                    MinimumValue = 3,
+                    MaximumValue = 256,
+                    DecimalPlaces = 1,
+                    Value = (decimal)Settings.Font.Size,
+                    Size = new Size(200, 24),
+                    Name = "Font size"
+                };
+                slider.ValueChanged += Slider_ValueChanged;
+                GH_DocumentObject.Menu_AppendCustomItem(DropDown, slider);
+            }
+
+
 
             UpdateCustomNicknameMenuEntryState();
         }
@@ -203,7 +211,30 @@ namespace Sunglasses
                 .Where(t => !string.IsNullOrWhiteSpace(t))
                 .ToArray();
 
-            return split.All(t => Grasshopper.Instances.ComponentServer.FindObjectByName(t, true, true) != null);
+            return split.All(t => Exists(t));
+        
+            bool Exists(string key)
+            {
+                foreach(var p in Grasshopper.Instances.ComponentServer.ObjectProxies)
+                {
+                    if (p.Exposure == GH_Exposure.hidden)
+                        continue;
+                    if (p.Desc.Name.Equals(key, StringComparison.OrdinalIgnoreCase) ||
+                        p.Desc.NickName.Equals(key, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+                if (Grasshopper.Instances.ActiveCanvas.IsDocument)
+                {
+                    foreach (var obj in Grasshopper.Instances.ActiveCanvas.Document.Objects)
+                    {
+                        if (obj.Name.Equals(key, StringComparison.OrdinalIgnoreCase) ||
+                           obj.NickName.Equals(key, StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                }
+              
+                return false;
+            }
         }
 
         private void UpdateCustomNicknameMenuEntryState()
@@ -242,6 +273,11 @@ namespace Sunglasses
             ((ToolStripMenuItem)sender).Checked = Settings.HideOnLowZoom = !Settings.HideOnLowZoom;
             Grasshopper.Instances.ActiveCanvas?.Refresh();
         }
+        private void GroupsOnLowZoomHandler(object sender, EventArgs e)
+        {
+            ((ToolStripMenuItem)sender).Checked = Settings.GroupsOnLowZoom = !Settings.GroupsOnLowZoom;
+            Grasshopper.Instances.ActiveCanvas?.Refresh();
+        }
 
         private void Slider_ValueChanged(object sender, Grasshopper.GUI.Base.GH_DigitScrollerEventArgs e)
         {
@@ -258,24 +294,14 @@ namespace Sunglasses
         const string NameOfClusterComponent = "Cluster";
         private bool ObjectFilter(IGH_DocumentObject obj)
         {
-            // Hide nickname for panels
             if (Settings.DisplayNicknames || Settings.DisplayCustomNicknames)
             {
-                // Hide group's nickname for now
-
                 if (obj is GH_Panel || obj is GH_Group || obj is GH_NumberSlider)
                     return false;
-
-                // TODO: Draw Group's nickname at the largest font size
-                // in the group's container box to be able to read it when the zoom is too low.
             }
 
-            // Move filter logic ahead to enable filter on custom nicknames.
-
-            // Do not split the string in every paint call. Cache them in Settings.
-            // String manipulation & IEnumerable.Contains are time-costly.
             if (Settings.IsFilterCustomEnabled &&
-                Settings.ShouldExcludeObject(obj.Name))
+                Settings.ShouldExcludeObject(obj))
                 return false;
 
             if (!Settings.FilterComponents &&
@@ -296,9 +322,14 @@ namespace Sunglasses
 
             if (Settings.DisplayCustomNicknames)
             {
+                if(obj is IGH_Param param && param.Kind == GH_ParamKind.floating &&
+                    (param.IconDisplayMode == GH_IconDisplayMode.name || 
+                    param.IconDisplayMode == GH_IconDisplayMode.application && !Grasshopper.CentralSettings.CanvasObjectIcons))
+                {
+                    return false;
+                }
                 var code = string.Join(".", obj.Category, obj.SubCategory, obj.Name);
 
-                // Reduce string manipulation to improve performance
                 var id = obj.ComponentGuid;
 
                 if (!_nicknamesCache.TryGetValue(code, out var defNick))
@@ -322,14 +353,9 @@ namespace Sunglasses
                     {
                         if (obj is GH_Cluster)
                         {
-                            // A newly-created cluster, or a cluster which is not an existing user object.
-                            // You cannot really know its original nickname
-                            // Show the nickname if it's not 'Cluster' - take it as newly-created
-
                             return obj.NickName != NameOfClusterComponent;
                         }
-
-                        Rhino.RhinoApp.WriteLine(obj.Name);
+                         
                         return true;
                     }
                 }
@@ -340,11 +366,9 @@ namespace Sunglasses
             return true;
         }
 
-        // This method is created to cache results and improve performance.
         private static Dictionary<Guid, bool> _specialObjectGuids = new Dictionary<Guid, bool>();
         private static bool IsSpecialObject(IGH_DocumentObject obj)
         {
-            // Cluster is regarded as a component, although it lies in the 'Special' namespace.
             if (obj is GH_Cluster)
                 return false;
 
@@ -406,11 +430,20 @@ namespace Sunglasses
         }
         private void Canvas_CanvasPostPaintObjects(Grasshopper.GUI.Canvas.GH_Canvas sender)
         {
-            if (!Settings.DisplayRichedCapsules || !sender.IsDocument)
-                return;
-            if (_visibleObjects == null || _visibleObjects.Length == 0)
-                return;
-            Drawing.PaintRichedCapsules(sender, _visibleObjects);
+            if (!sender.IsDocument || _visibleObjects == null || _visibleObjects.Length == 0)
+                return; 
+            if(Settings.GroupsOnLowZoom && sender.Viewport.Zoom <= 0.5f)
+            {
+                var groups = _visibleObjects.OfType<GH_Group>();
+                if (Settings.IsFilterCustomEnabled)
+                {
+                    groups = groups.Where(g => !Settings.ShouldExcludeObject(g));
+                }
+                Drawing.PaintGroupNickname(sender, groups);
+            }
+              
+            if (Settings.DisplayRichedCapsules)
+                Drawing.PaintRichedCapsules(sender, _visibleObjects);
         }
 
         private Guid galapagosID = new Guid("E6DD2904-14BC-455b-8376-948BF2E3A7BC");

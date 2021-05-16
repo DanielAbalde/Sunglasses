@@ -26,8 +26,10 @@ namespace Sunglasses
             {
                 Rhino.RhinoApp.WriteLine("Sunglasses cannot find Display menu.");
                 return;
-            } 
-            ((ToolStripMenuItem)menu[0]).DropDownItems.Insert(3, new SunglassesMenuItem());
+            }
+            var items = ((ToolStripMenuItem)menu[0]).DropDownItems;
+            if(items.Find("Sunglasses", false).Length == 0)
+                items.Insert(3, new SunglassesMenuItem());
 
         }
 
@@ -46,7 +48,7 @@ namespace Sunglasses
         public override Guid Id => new Guid("194607e9-d4d6-4e5a-836f-a65774231315");
         public override string AuthorName => "Daniel Gonzalez Abalde";
         public override string AuthorContact => "https://discord.gg/75tP9hBnk8"; 
-        public override GH_LibraryLicense License => GH_LibraryLicense.opensource;
-        public override string Version => "1.2.0";
+        public override GH_LibraryLicense License => GH_LibraryLicense.opensource; 
+        public override string AssemblyVersion => base.AssemblyVersion;
     }
 }
