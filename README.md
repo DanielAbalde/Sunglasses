@@ -42,7 +42,6 @@ From version 1.1.0, there is another feature to visualise the content of compone
 These user settings are stored in grasshopper_kernel.xml file in the Grasshopper folder, with the prefix "Sunglasses". You could edit them manually from there or delete them if you want to restore the default values.
   
 
-
 ## 🌈 License
 
 This project is free software: you can redistribute it and/or modify it under the terms of the [GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.en.html) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
