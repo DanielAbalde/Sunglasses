@@ -1,0 +1,100 @@
+name: Distribute Grasshopper Plugin
+
+on:
+  release:
+    types: [created]
+
+jobs:
+
+  distribute:
+
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Solution_Name: Sunglasses    # Replace with your solution name, i.e. MyWpfApp
+      Release_File_Path: '.\Sunglasses\'
+      YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
+      AUTHID:  ${{ secrets.AUTHID }}
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.0.2
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+
+    # Add NuGet to the PATH: https://github.com/marketplace/actions/setup-nuget-exe-for-use-with-actions
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.5
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+
+    # Restore NuGet packages
+    - name: Restore the application
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=Release
+
+    # Build the application
+    - name: Build the application
+      run: msbuild $env:Solution_Name /p:Configuration=Release
+
+    # Below actions from https://discourse.mcneel.com/t/github-action-to-yak/120815/3
+    # ...and https://github.com/arup-group/GSA-Grasshopper/blob/master/.github/workflows/yakdeploy.yml
+    - name: Download Yak
+      run: curl https://files.mcneel.com/yak/tools/latest/yak.exe -o yak.exe
+      working-directory: ${{ env.Release_File_Path }}
+      env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+
+    - name: Check Download
+      run: ls .
+      working-directory: ${{ env.Release_File_Path }}
+      env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+
+    - name: Build Yak
+      run: .\yak.exe build
+      working-directory: ${{ env.Release_File_Path }}
+
+    - name: Check Build
+      run: ls .
+      working-directory: ${{ env.Release_File_Path }}
+
+    - name: Push Rhino 6 version to YAK
+      run: |
+        $YAK_FILE=$(ls *.yak)
+        echo $YAK_FILE
+        .\yak.exe push $YAK_FILE
+      working-directory: ${{ env.Release_File_Path }}
+      env:
+        YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
+
+    # Rename the distribution tag to enable Rhino7 support
+    # as per https://developer.rhino3d.com/wip/guides/yak/creating-a-rhino-plugin-package/
+    - name: Push Rhino 7 version to YAK
+      run: |
+        $yakCurrentVersName = Get-ChildItem -Path . -Filter "*.yak"
+        $yakRh7Name =  $yakCurrentVersName -Replace "rh6_10", "rh7_0"
+        echo $yakRh7Name
+        Rename-Item -Path $yakCurrentVersName -NewName $yakRh7Name
+        .\yak.exe push $yakRh7Name
+      working-directory: ${{ env.Release_File_Path }}
+      env:
+        YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
+
+    # Rename the distribution tag to enable Rhino8 support
+    - name: Push Rhino 8 version to YAK
+      run: |
+        $yakCurrentVersName = Get-ChildItem -Path . -Filter "*.yak"
+        $yakRh8Name =  $yakCurrentVersName -Replace "rh7_0", "rh8_0"
+        echo $yakRh8Name
+        Rename-Item -Path $yakCurrentVersName -NewName $yakRh8Name
+        .\yak.exe push $yakRh8Name
+      working-directory: ${{ env.Release_File_Path }}
+      env:
+        YAK_TOKEN: ${{ secrets.YAK_TOKEN }}
